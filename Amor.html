@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Universo para mi Esposa 🌻🪐</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #030306;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+    }
+
+    #webgl-container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    /* Encabezado Superior */
+    .ui-overlay-top {
+      position: absolute;
+      top: 25px;
+      width: 100%;
+      padding: 0 20px;
+      text-align: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    h1 {
+      color: #fff176;
+      font-size: 1.8rem;
+      text-shadow: 0 0 15px rgba(251, 192, 45, 0.9), 0 0 30px rgba(245, 127, 23, 0.6);
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    p.message-top {
+      color: #fffde7;
+      font-size: 1rem;
+      max-width: 550px;
+      margin: 0 auto;
+      line-height: 1.4;
+      text-shadow: 0 0 10px rgba(255, 238, 88, 0.8), 0 0 20px rgba(0, 0, 0, 0.9);
+      font-weight: 500;
+    }
+
+    /* Tarjeta/Frase Inferior */
+    .ui-overlay-bottom {
+      position: absolute;
+      bottom: 25px;
+      width: 100%;
+      padding: 0 20px;
+      text-align: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .bottom-box {
+      display: inline-block;
+      background: rgba(15, 15, 22, 0.65);
+      border: 1px solid rgba(251, 192, 45, 0.5);
+      backdrop-filter: blur(8px);
+      padding: 12px 24px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(251, 192, 45, 0.25);
+    }
+
+    p.message-bottom {
+      color: #ffee58;
+      font-size: 0.95rem;
+      text-shadow: 0 0 8px rgba(255, 238, 88, 0.6);
+      font-weight: 600;
+    }
+
+    /* Contenedor para flores flotantes 2D en bordes al tocar */
+    #burst-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 5;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .burst-flower {
+      position: absolute;
+      pointer-events: none;
+      animation: floatToEdge 2.2s ease-out forwards;
+      filter: drop-shadow(0 0 8px rgba(255, 235, 59, 0.8));
+    }
+
+    @keyframes floatToEdge {
+      0% {
+        transform: translate(-50%, -50%) scale(0.3) rotate(0deg);
+        opacity: 1;
+      }
+      70% {
+        opacity: 0.9;
+      }
+      100% {
+        transform: translate(var(--tx), var(--ty)) scale(1.2) rotate(var(--rot));
+        opacity: 0;
+      }
+    }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 1.5rem; }
+      p.message-top { font-size: 0.9rem; }
+      p.message-bottom { font-size: 0.85rem; }
+    }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+  <!-- Mensaje Superior -->
+  <div class="ui-overlay-top">
+    <h1>Feliz Día de las Flores Amarillas 🌻✨</h1>
+    <p class="message-top">
+      "Eres la casualidad más bonita que me ha pasado en la vida. Gracias por existir y por ser mi esposa. Te amo más de lo que las palabras pueden expresar."
+    </p>
+  </div>
+
+  <!-- Mensaje Inferior -->
+  <div class="ui-overlay-bottom">
+    <div class="bottom-box">
+      <p class="message-bottom">
+        En este universo y en todos los demás, mi flor favorita siempre serás tú. Te amo, mi vida. 🌻🪐✨
+      </p>
+    </div>
+  </div>
+
+  <div id="burst-container"></div>
+  <div id="webgl-container"></div>
+
+  <script>
+    const container = document.getElementById('webgl-container');
+    const burstContainer = document.getElementById('burst-container');
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x030306, 0.008);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 8, 26);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.8;
+
+    // --- 1. ILUMINACIÓN PARA EL PLANETA Y LAS FLORES ---
+    const ambientLight = new THREE.AmbientLight(0xfff59d, 0.8);
+    scene.add(ambientLight);
+
+    const pointLight = new THREE.PointLight(0xffeb3b, 2.5, 50);
+    pointLight.position.set(0, 0, 0);
+    scene.add(pointLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffd54f, 1.2);
+    dirLight.position.set(10, 15, 10);
+    scene.add(dirLight);
+
+    // --- 2. TEXTURA Y CREACIÓN DEL PLANETA CENTRAL (SOL AMARILLO) ---
+    function createPlanetTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 512;
+      const ctx = c.getContext('2d');
+
+      const grad = ctx.createLinearGradient(0, 0, 0, 512);
+      grad.addColorStop(0, '#fbc02d');
+      grad.addColorStop(0.3, '#f57f17');
+      grad.addColorStop(0.5, '#fff176');
+      grad.addColorStop(0.8, '#f57f17');
+      grad.addColorStop(1, '#fbc02d');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 512);
+
+      for (let i = 0; i < 30; i++) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.15})`;
+        ctx.fillRect(0, Math.random() * 512, 512, Math.random() * 18 + 4);
+      }
+
+      return new THREE.CanvasTexture(c);
+    }
+
+    const planetGeo = new THREE.SphereGeometry(3.5, 64, 64);
+    const planetMat = new THREE.MeshStandardMaterial({
+      map: createPlanetTexture(),
+      roughness: 0.6,
+      metalness: 0.1,
+      emissive: 0xfbc02d,
+      emissiveIntensity: 0.25
+    });
+    const planet = new THREE.Mesh(planetGeo, planetMat);
+    scene.add(planet);
+
+    // Resplandor del planeta
+    const glowGeo = new THREE.SphereGeometry(3.8, 32, 32);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: 0xffeb3b,
+      transparent: true,
+      opacity: 0.18,
+      side: THREE.BackSide
+    });
+    const planetGlow = new THREE.Mesh(glowGeo, glowMat);
+    scene.add(planetGlow);
+
+    // Anillo sutil
+    const ringGeo = new THREE.RingGeometry(4.8, 6.2, 64);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0xffeb3b,
+      transparent: true,
+      opacity: 0.35,
+      side: THREE.DoubleSide
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI / 2 + 0.3;
+    scene.add(ring);
+
+    // --- 3. DIBUJO DE FLORES PEQUEÑAS VECTORIALES PULIDAS ---
+    function drawSunflowerCanvas() {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.translate(128, 128);
+
+      const glow = ctx.createRadialGradient(0, 0, 30, 0, 0, 110);
+      glow.addColorStop(0, 'rgba(255, 235, 59, 0.35)');
+      glow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(0, 0, 110, 0, Math.PI * 2); ctx.fill();
+
+      ctx.save();
+      for (let i = 0; i < 16; i++) {
+        const pGrad = ctx.createLinearGradient(0, -25, 0, -95);
+        pGrad.addColorStop(0, '#fbc02d');
+        pGrad.addColorStop(1, '#ffee58');
+        ctx.fillStyle = pGrad;
+
+        ctx.beginPath();
+        ctx.moveTo(0, -25);
+        ctx.bezierCurveTo(-12, -50, -10, -85, 0, -95);
+        ctx.bezierCurveTo(10, -85, 12, -50, 0, -25);
+        ctx.fill();
+        ctx.rotate((Math.PI * 2) / 16);
+      }
+      ctx.restore();
+
+      const cGrad = ctx.createRadialGradient(0, 0, 5, 0, 0, 30);
+      cGrad.addColorStop(0, '#3e2723');
+      cGrad.addColorStop(1, '#5d4037');
+      ctx.fillStyle = cGrad;
+      ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI * 2); ctx.fill();
+
+      return c;
+    }
+
+    function drawRoseCanvas() {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.translate(128, 128);
+
+      const glow = ctx.createRadialGradient(0, 0, 20, 0, 0, 100);
+      glow.addColorStop(0, 'rgba(255, 238, 88, 0.35)');
+      glow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(0, 0, 100, 0, Math.PI * 2); ctx.fill();
+
+      ctx.fillStyle = '#ffee58';
+      for (let i = 0; i < 6; i++) {
+        ctx.beginPath();
+        ctx.arc(0, -30, 40, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.rotate((Math.PI * 2) / 6);
+      }
+
+      ctx.fillStyle = '#fff176';
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.arc(0, -18, 26, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.rotate((Math.PI * 2) / 5);
+      }
+
+      ctx.fillStyle = '#fff9c4';
+      ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI * 2); ctx.fill();
+
+      return c;
+    }
+
+    const sunflowerCanvas = drawSunflowerCanvas();
+    const roseCanvas = drawRoseCanvas();
+
+    const textures = [
+      new THREE.CanvasTexture(sunflowerCanvas),
+      new THREE.CanvasTexture(roseCanvas)
+    ];
+
+    // --- 4. CIENTOS DE FLORES GIRANDO ALREDEDOR DEL PLANETA ---
+    const flowerGroup = new THREE.Group();
+    scene.add(flowerGroup);
+
+    const flowersData = [];
+    const totalFlowers = 200;
+
+    for (let i = 0; i < totalFlowers; i++) {
+      const tex = textures[i % textures.length];
+      const mat = new THREE.SpriteMaterial({ 
+        map: tex, 
+        transparent: true,
+        opacity: Math.random() * 0.3 + 0.7 
+      });
+      const sprite = new THREE.Sprite(mat);
+
+      const scale = Math.random() * 0.45 + 0.45; 
+      sprite.scale.set(scale, scale, 1);
+
+      const radius = Math.random() * 16 + 5.2; 
+      const angle = Math.random() * Math.PI * 2;
+      const height = (Math.random() - 0.5) * 10;
+
+      sprite.position.set(
+        Math.cos(angle) * radius,
+        height,
+        Math.sin(angle) * radius
+      );
+
+      flowersData.push({
+        sprite: sprite,
+        angle: angle,
+        radius: radius,
+        speed: (Math.random() * 0.005 + 0.002) * (Math.random() > 0.5 ? 1 : -1),
+        floatOffset: Math.random() * Math.PI * 2,
+        floatSpeed: Math.random() * 0.003 + 0.0015
+      });
+
+      flowerGroup.add(sprite);
+    }
+
+    // --- 5. PARTÍCULAS DE LUZ ---
+    const particleCount = 2200;
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+
+    for (let i = 0; i < particleCount; i++) {
+      const radius = Math.random() * 26 + 3.8;
+      const angle = Math.random() * Math.PI * 2;
+      positions[i * 3] = Math.cos(angle) * radius;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 14;
+      positions[i * 3 + 2] = Math.sin(angle) * radius;
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    const canvasP = document.createElement('canvas');
+    canvasP.width = 16; canvasP.height = 16;
+    const ctxP = canvasP.getContext('2d');
+    const gradP = ctxP.createRadialGradient(8, 8, 0, 8, 8, 8);
+    gradP.addColorStop(0, '#ffffff');
+    gradP.addColorStop(0.5, '#ffeb3b');
+    gradP.addColorStop(1, 'rgba(0,0,0,0)');
+    ctxP.fillStyle = gradP; ctxP.fillRect(0, 0, 16, 16);
+
+    const pMaterial = new THREE.PointsMaterial({
+      size: 0.35,
+      map: new THREE.CanvasTexture(canvasP),
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    const particleSystem = new THREE.Points(geometry, pMaterial);
+    scene.add(particleSystem);
+
+    // --- 6. INTERACCIÓN AL TOCAR LA PANTALLA / SOL (FLORES A LOS BORDES) ---
+    function spawnEdgeFlower(x, y) {
+      const img = document.createElement('img');
+      const isSunflower = Math.random() > 0.5;
+      img.src = isSunflower ? sunflowerCanvas.toDataURL() : roseCanvas.toDataURL();
+      img.className = 'burst-flower';
+
+      // Flores más grandes
+      const size = Math.floor(Math.random() * 40 + 65); 
+      img.style.width = size + 'px';
+      img.style.height = size + 'px';
+
+      img.style.left = x + 'px';
+      img.style.top = y + 'px';
+
+      // Ángulo aleatorio hacia los bordes
+      const angle = Math.random() * Math.PI * 2;
+      const distance = Math.random() * 250 + 200;
+      const tx = Math.cos(angle) * distance;
+      const ty = Math.sin(angle) * distance;
+      const rot = (Math.random() - 0.5) * 360;
+
+      img.style.setProperty('--tx', `${tx}px`);
+      img.style.setProperty('--ty', `${ty}px`);
+      img.style.setProperty('--rot', `${rot}deg`);
+
+      burstContainer.appendChild(img);
+
+      setTimeout(() => {
+        img.remove();
+      }, 2200);
+    }
+
+    function handleInteraction(e) {
+      let x = e.clientX;
+      let y = e.clientY;
+
+      if (e.touches && e.touches.length > 0) {
+        x = e.touches[0].clientX;
+        y = e.touches[0].clientY;
+      }
+
+      // Crear varias flores dispersas flotando a los bordes
+      for (let i = 0; i < 6; i++) {
+        setTimeout(() => {
+          spawnEdgeFlower(x, y);
+        }, i * 60);
+      }
+    }
+
+    window.addEventListener('pointerdown', handleInteraction);
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // --- BUCLE DE ANIMACIÓN ---
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const time = Date.now();
+
+      planet.rotation.y += 0.004;
+
+      flowersData.forEach((f) => {
+        f.angle += f.speed;
+        f.sprite.position.x = Math.cos(f.angle) * f.radius;
+        f.sprite.position.z = Math.sin(f.angle) * f.radius;
+        f.sprite.position.y += Math.sin(time * f.floatSpeed + f.floatOffset) * 0.012;
+      });
+
+      particleSystem.rotation.y += 0.0008;
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
